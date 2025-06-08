@@ -14,8 +14,6 @@ services:
 
   collaboration:
     image: ${OC_DOCKER_IMAGE:-opencloudeu/opencloud-rolling}:${OC_DOCKER_TAG:-latest}
-    networks:
-      opencloud-net:
     depends_on:
       opencloud:
         condition: service_started
