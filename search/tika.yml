@@ -3,8 +3,6 @@ services:
   tika:
     image: ${TIKA_IMAGE:-apache/tika:latest-full}
     # release notes: https://tika.apache.org
-    networks:
-      opencloud-net:
     restart: always
     logging:
       driver: ${LOG_DRIVER:-local}
