@@ -55,20 +55,238 @@ services:
       OC_PASSWORD_POLICY_MIN_SPECIAL_CHARACTERS: "${OC_PASSWORD_POLICY_MIN_SPECIAL_CHARACTERS:-1}"
       # default language for services/WebUI; defaults to English, language code (ISO 639-1, e.g. de, en, fr)
       OC_DEFAULT_LANGUAGE: ${DEFAULT_LANGUAGE}
+
+      # collabora integration
+      COLLABORA_DOMAIN: ${COLLABORA_DOMAIN:-collabora.opencloud.test}
+      TRAEFIK_PORT_HTTPS: ${TRAEFIK_PORT_HTTPS:+:}${TRAEFIK_PORT_HTTPS:-}
+      NATS_NATS_HOST: 0.0.0.0
+      GATEWAY_GRPC_ADDR: 0.0.0.0:9142
+      FRONTEND_APP_HANDLER_SECURE_VIEW_APP_ADDR: eu.opencloud.api.collaboration
+      GRAPH_AVAILABLE_ROLES: "b1e2218d-eef8-4d4c-b82d-0f1a1b48f3b5,a8d5fe5e-96e3-418d-825b-534dbdf22b99,fb6c3e19-e378-47e5-b277-9732f9de6e21,58c63c02-1d89-4572-916a-870abc5a1b7d,2d00ce52-1fc2-4dbc-8b95-a73b73395f5a,1c996275-f1c9-4e71-abdf-a42f6495e960,312c0871-5ef7-4b3a-85b6-0e4074c64049,aa97fe03-7980-45ac-9e50-b325749fd7e6"
+
+      # fulltext search
+      SEARCH_EXTRACTOR_TYPE: tika
+      SEARCH_EXTRACTOR_TIKA_TIKA_URL: http://tika:9998
+      FRONTEND_FULL_TEXT_SEARCH_ENABLED: "true"
+
+      # antivirus
+      POSTPROCESSING_STEPS: "virusscan"
+      STORAGE_USERS_DATA_GATEWAY_URL: "http://opencloud:9200/data"
+      ANTIVIRUS_MAX_SCAN_SIZE: ${ANTIVIRUS_MAX_SCAN_SIZE:-100MB}
+      ANTIVIRUS_INFECTED_FILE_HANDLING: abort
+      ANTIVIRUS_MAX_SCAN_SIZE_MODE: ${ANTIVIRUS_MAX_SCAN_SIZE_MODE:-partial}
+      ANTIVIRUS_WORKERS: 1
+      ANTIVIRUS_CLAMAV_SOCKET: /var/run/clamav/clamd.sock
+      ANTIVIRUS_SCANNER_TYPE: clamav
+
+      # metrics
+      PROXY_DEBUG_ADDR: 0.0.0.0:9205
+
+      # external IdP (Authentik)
+      OC_LDAP_URI: ldaps://ldap-server:1636
+      OC_LDAP_INSECURE: "true"
+      OC_LDAP_BIND_DN: "cn=admin,dc=opencloud,dc=eu"
+      OC_LDAP_BIND_PASSWORD: ${LDAP_BIND_PASSWORD:-admin}
+      OC_LDAP_GROUP_BASE_DN: "ou=groups,dc=opencloud,dc=eu"
+      OC_LDAP_USER_BASE_DN: "ou=users,dc=opencloud,dc=eu"
+      OC_LDAP_USER_FILTER: "(objectclass=inetOrgPerson)"
+      GRAPH_LDAP_SERVER_UUID: "false"
+      GRAPH_LDAP_REFINT_ENABLED: "true" # osixia has refint enabled.
+      FRONTEND_READONLY_USER_ATTRIBUTES: "user.onPremisesSamAccountName,user.displayName,user.mail,user.passwordProfile,user.accountEnabled,user.appRoleAssignments"
+      PROXY_OIDC_REWRITE_WELLKNOWN: "true"
+      WEB_OIDC_CLIENT_ID: ${OC_OIDC_CLIENT_ID:-web}
+      PROXY_ROLE_ASSIGNMENT_DRIVER: "oidc"
+      OC_OIDC_ISSUER: ${IDP_ISSUER_URL:-https://keycloak.opencloud.test/realms/openCloud}
+      # This specifies to start all services except idm and idp. These are replaced by external services.
+      OC_EXCLUDE_RUN_SERVICES: idm,idp
+      # IdP specific configuration for auto-provisioning
+      OC_LDAP_SERVER_WRITE_ENABLED: "true"
+      PROXY_AUTOPROVISION_ACCOUNTS: "true"
+      # Use the `sub` claim from the IdP for the user ID
+      # Most IdPs use the internal user ID as the `sub` claim
+      PROXY_USER_OIDC_CLAIM: "sub"
+      # Use the `sub` claim as identifier during autoprovisioning
+      # That mitigates problems when a user is renamed in the IdP
+      PROXY_AUTOPROVISION_CLAIM_USERNAME: "sub"
+      PROXY_USER_CS3_CLAIM: "username"
+      # This is the default value, we need to set it here because we overwrite the values
+      OC_LDAP_USER_SCHEMA_ID: "opencloudUUID"
+      # This is the default value, we need to set it here because we overwrite the values
+      OC_LDAP_GROUP_SCHEMA_ID: "opencloudUUID"
+      # This is the default value, we need to set it here because we overwrite the values
+      OC_LDAP_DISABLE_USER_MECHANISM: "attribute"
+      OC_ADMIN_USER_ID: ""
+      SETTINGS_SETUP_DEFAULT_ASSIGNMENTS: "false"
+      GRAPH_ASSIGN_DEFAULT_USER_ROLE: "false"
+      GRAPH_USERNAME_MATCH: "none"
+      # We need to set the IDP_DOMAIN to allow the CSP rules to be set correctly
+      IDP_DOMAIN: ${IDP_DOMAIN:-keycloak.opencloud.test}
+      # The openCloud users need to be able to edit their account in the externa IdP
+      WEB_OPTION_ACCOUNT_EDIT_LINK_HREF: ${IDP_ACCOUNT_URL}
+
+      # bind to all interfaces for Coolify's Traefik proxy
+      PROXY_HTTP_ADDR: "0.0.0.0:9200"
     volumes:
       - ./config/opencloud/csp.yaml:/etc/opencloud/csp.yaml
       - ./config/opencloud/banned-password-list.txt:/etc/opencloud/banned-password-list.txt
+      - ./config/opencloud/proxy.yaml:/etc/opencloud/proxy.yaml
       # configure the .env file to use own paths instead of docker internal volumes
       - ${OC_CONFIG_DIR:-opencloud-config}:/etc/opencloud
       - ${OC_DATA_DIR:-opencloud-data}:/var/lib/opencloud
       - ${OC_APPS_DIR:-./config/opencloud/apps}:/var/lib/opencloud/web/assets/apps
+      - clamav-socket:/var/run/clamav
+    expose:
+      - "9200"
+      - "9205"
     logging:
       driver: ${LOG_DRIVER:-local}
+    restart: always
+
+  collaboration:
+    image: ${OC_DOCKER_IMAGE:-opencloudeu/opencloud-rolling}:${OC_DOCKER_TAG:-latest}
+    user: ${OC_CONTAINER_UID_GID:-1000:1000}
+    networks:
+      opencloud-net:
+    depends_on:
+      opencloud:
+        condition: service_started
+      collabora:
+        condition: service_healthy
+    entrypoint:
+      - /bin/sh
+    command: [ "-c", "opencloud collaboration server" ]
+    environment:
+      COLLABORATION_GRPC_ADDR: 0.0.0.0:9301
+      COLLABORATION_HTTP_ADDR: 0.0.0.0:9300
+      MICRO_REGISTRY: "nats-js-kv"
+      MICRO_REGISTRY_ADDRESS: "opencloud:9233"
+      COLLABORATION_WOPI_SRC: https://${WOPISERVER_DOMAIN:-wopiserver.opencloud.test}${TRAEFIK_PORT_HTTPS:+:}${TRAEFIK_PORT_HTTPS:-}
+      COLLABORATION_APP_NAME: "CollaboraOnline"
+      COLLABORATION_APP_PRODUCT: "Collabora"
+      COLLABORATION_APP_ADDR: https://${COLLABORA_DOMAIN:-collabora.opencloud.test}${TRAEFIK_PORT_HTTPS:+:}${TRAEFIK_PORT_HTTPS:-}
+      COLLABORATION_APP_ICON: https://${COLLABORA_DOMAIN:-collabora.opencloud.test}${TRAEFIK_PORT_HTTPS:+:}${TRAEFIK_PORT_HTTPS:-}/favicon.ico
+      COLLABORATION_APP_INSECURE: "${INSECURE:-true}"
+      COLLABORATION_CS3API_DATAGATEWAY_INSECURE: "${INSECURE:-true}"
+      COLLABORATION_LOG_LEVEL: ${LOG_LEVEL:-info}
+      OC_URL: https://${OC_DOMAIN:-cloud.opencloud.test}${TRAEFIK_PORT_HTTPS:+:}${TRAEFIK_PORT_HTTPS:-}
+      # metrics
+      COLLABORATION_DEBUG_ADDR: 0.0.0.0:9304
+    volumes:
+      # configure the .env file to use own paths instead of docker internal volumes
+      - ${OC_CONFIG_DIR:-opencloud-config}:/etc/opencloud
+    expose:
+      - "9300"
+      - "9304"
+    logging:
+      driver: ${LOG_DRIVER:-local}
+    restart: always
+
+  collabora:
+    image: collabora/code:25.04.7.1.1
+    # release notes: https://www.collaboraonline.com/release-notes/
+    networks:
+      opencloud-net:
+    environment:
+      aliasgroup1: https://${WOPISERVER_DOMAIN:-wopiserver.opencloud.test}${TRAEFIK_PORT_HTTPS:+:}${TRAEFIK_PORT_HTTPS:-}
+      DONT_GEN_SSL_CERT: "YES"
+      extra_params: |
+        --o:ssl.enable=${COLLABORA_SSL_ENABLE:-true} \
+        --o:ssl.ssl_verification=${COLLABORA_SSL_VERIFICATION:-true} \
+        --o:ssl.termination=true \
+        --o:welcome.enable=false \
+        --o:net.frame_ancestors=${OC_DOMAIN:-cloud.opencloud.test}${TRAEFIK_PORT_HTTPS:+:}${TRAEFIK_PORT_HTTPS:-} \
+        --o:net.lok_allow.host[14]=${OC_DOMAIN:-cloud.opencloud.test}${TRAEFIK_PORT_HTTPS:+:}${TRAEFIK_PORT_HTTPS:-} \
+        --o:home_mode.enable=${COLLABORA_HOME_MODE:-false}
+      username: ${COLLABORA_ADMIN_USER:-admin}
+      password: ${COLLABORA_ADMIN_PASSWORD:-admin}
+    cap_add:
+      - MKNOD
+    volumes:
+      # Mount local TrueType fonts so the container can use system fonts
+      # (e.g. Microsoft fonts like Arial, Calibri, Cambria by installing the `ttf-mscorefonts-installer` package).
+      - /usr/share/fonts/truetype:/usr/share/fonts/truetype/more:ro
+      - /usr/share/fonts/truetype:/opt/cool/systemplate/usr/share/fonts/truetype/more:ro
+    expose:
+      - "9980"
+    logging:
+      driver: ${LOG_DRIVER:-local}
+    restart: always
+    entrypoint: [ '/bin/bash', '-c' ]
+    command: [ 'coolconfig generate-proof-key && /start-collabora-online.sh' ]
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9980/hosting/discovery" ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  tika:
+    image: ${TIKA_IMAGE:-apache/tika:latest}
+    # release notes: https://tika.apache.org
+    networks:
+      opencloud-net:
+    restart: always
+    logging:
+      driver: ${LOG_DRIVER:-local}
+
+  clamav:
+    image: clamav/clamav:${CLAMAV_DOCKER_TAG:-latest}
+    environment:
+      # Accepts a number with optional K, M or G suffix. Must be greater or equal to ANTIVIRUS_MAX_SCAN_SIZE above.
+      # K = KiB (1024), M = MiB (1024 * 1024), G = GiB (1024 * 1024 * 1024)
+      CLAMD_CONF_StreamMaxLength: 100M
+    networks:
+      opencloud-net:
+    volumes:
+      - clamav-socket:/tmp
+      - clamav-db:/var/lib/clamav
+    logging:
+      driver: ${LOG_DRIVER:-local}
+    restart: always
+
+  radicale:
+    image: ${RADICALE_DOCKER_IMAGE:-opencloudeu/radicale}:${RADICALE_DOCKER_TAG:-latest}
+    user: ${OC_CONTAINER_UID_GID:-1000:1000}
+    networks:
+      opencloud-net:
+    logging:
+      driver: ${LOG_DRIVER:-local}
+    restart: always
+    volumes:
+      - ./config/radicale/config:/etc/radicale/config
+      - ${RADICALE_DATA_DIR:-radicale-data}:/var/lib/radicale
+
+  ldap-server:
+    image: bitnamilegacy/openldap:2.6
+    networks:
+      opencloud-net:
+    entrypoint: [ "/bin/sh", "/opt/bitnami/scripts/openldap/docker-entrypoint-override.sh", "/opt/bitnami/scripts/openldap/run.sh" ]
+    environment:
+      BITNAMI_DEBUG: true
+      LDAP_TLS_VERIFY_CLIENT: never
+      LDAP_ENABLE_TLS: "yes"
+      LDAP_TLS_CA_FILE: /opt/bitnami/openldap/share/openldap.crt
+      LDAP_TLS_CERT_FILE: /opt/bitnami/openldap/share/openldap.crt
+      LDAP_TLS_KEY_FILE: /opt/bitnami/openldap/share/openldap.key
+      LDAP_ROOT: "dc=opencloud,dc=eu"
+      LDAP_ADMIN_PASSWORD: ${LDAP_BIND_PASSWORD:-admin}
+    volumes:
+      # Only use the base ldif file to create the base structure
+      - ./config/ldap/ldif/10_base.ldif:/ldifs/10_base.ldif
+      # Use the custom schema from opencloud because we are in full control of the ldap server
+      - ./config/ldap/schemas/10_opencloud_schema.ldif:/schemas/10_opencloud_schema.ldif
+      - ./config/ldap/docker-entrypoint-override.sh:/opt/bitnami/scripts/openldap/docker-entrypoint-override.sh
+      - ${LDAP_CERTS_DIR:-ldap-certs}:/opt/bitnami/openldap/share
+      - ${LDAP_DATA_DIR:-ldap-data}:/bitnami/openldap
     restart: always
 
 volumes:
   opencloud-config:
   opencloud-data:
+  clamav-db:
+  clamav-socket:
+  radicale-data:
+  ldap-certs:
+  ldap-data:
 
 networks:
   opencloud-net:

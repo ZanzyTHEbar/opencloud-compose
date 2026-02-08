@@ -1,16 +1,10 @@
 ## Coolify Deployment
 
-This stack is designed to run behind Coolify's built-in Traefik proxy. Use the Coolify overlay to expose only the internal service ports and let Coolify generate Traefik labels and routes.
+This stack is designed to run behind Coolify's built-in Traefik proxy. Coolify will run `docker compose` with a single file and generate Traefik labels for any domains you assign.
 
-### Compose File Order
+### Compose File
 
-Put the Coolify overlay **last** so it can override network settings and expose ports cleanly.
-
-Example `COMPOSE_FILE`:
-
-```
-COMPOSE_FILE=docker-compose.yml:weboffice/collabora.yml:search/tika.yml:antivirus/clamav.yml:radicale/radicale.yml:monitoring/monitoring.yml:monitoring/monitoring-collaboration.yml:docker-compose.coolify.yml
-```
+Use `docker-compose.yaml` in this repo. It already includes OpenCloud, Collabora, WOPI, Tika, ClamAV, Radicale, monitoring, external IdP, and the Coolify port exposures in a single file.
 
 Do **not** include any `traefik/*` or `external-proxy/*` overlays when using Coolify.
 
@@ -62,3 +56,7 @@ OC_OIDC_CLIENT_ID=<from Authentik>
 ```
 
 OpenCloud still uses the LDAP service for user storage in external IdP mode.
+
+### Optional Compose Env Vars (Not Used by Coolify)
+
+Coolify doesn't use `COMPOSE_FILE` or `COMPOSE_PATH_SEPARATOR`, so you can omit those for deployments in Coolify.
