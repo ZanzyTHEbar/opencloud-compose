@@ -31,13 +31,19 @@ INSECURE=false
 
 Storage paths (bind mounts inside the Coolify LXC):
 
+This Compose file mounts from `./storage/...`, so create a symlink inside the Coolify app directory:
+
 ```
-OC_CONFIG_DIR_HOST=/mnt/opencloud/config
-OC_DATA_DIR_HOST=/mnt/opencloud/data
-OC_APPS_DIR_HOST=/mnt/opencloud/apps
-RADICALE_DATA_DIR_HOST=/mnt/opencloud/services/radicale
-LDAP_DATA_DIR_HOST=/mnt/opencloud/services/ldap
-LDAP_CERTS_DIR_HOST=/mnt/opencloud/services/ldap-certs
+ln -s /mnt/opencloud /data/coolify/applications/<app_uuid>/storage
+```
+
+That maps:
+
+```
+./storage/config    -> /mnt/opencloud/config
+./storage/data      -> /mnt/opencloud/data
+./storage/apps      -> /mnt/opencloud/apps
+./storage/services  -> /mnt/opencloud/services
 ```
 
 If antivirus is enabled, add it to `START_ADDITIONAL_SERVICES`:

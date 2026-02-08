@@ -126,13 +126,10 @@ services:
       # bind to all interfaces for Coolify's Traefik proxy
       PROXY_HTTP_ADDR: "0.0.0.0:9200"
     volumes:
-      - ./config/opencloud/csp.yaml:/etc/opencloud/csp.yaml
-      - ./config/opencloud/banned-password-list.txt:/etc/opencloud/banned-password-list.txt
-      - ./config/opencloud/proxy.yaml:/etc/opencloud/proxy.yaml
-      # configure the .env file to use own paths instead of docker internal volumes
-      - ${OC_CONFIG_DIR_HOST:-opencloud-config}:/etc/opencloud
-      - ${OC_DATA_DIR_HOST:-opencloud-data}:/var/lib/opencloud
-      - ${OC_APPS_DIR_HOST:-./config/opencloud/apps}:/var/lib/opencloud/web/assets/apps
+      # bind mounts under ./storage -> /mnt/opencloud (symlink in Coolify app dir)
+      - ./storage/config:/etc/opencloud
+      - ./storage/data:/var/lib/opencloud
+      - ./storage/apps:/var/lib/opencloud/web/assets/apps
       - clamav-socket:/var/run/clamav
     expose:
       - "9200"
@@ -171,8 +168,7 @@ services:
       # metrics
       COLLABORATION_DEBUG_ADDR: 0.0.0.0:9304
     volumes:
-      # configure the .env file to use own paths instead of docker internal volumes
-      - ${OC_CONFIG_DIR_HOST:-opencloud-config}:/etc/opencloud
+      - ./storage/config:/etc/opencloud
     expose:
       - "9300"
       - "9304"
@@ -252,7 +248,7 @@ services:
     restart: always
     volumes:
       - ./config/radicale:/etc/radicale
-      - ${RADICALE_DATA_DIR_HOST:-radicale-data}:/var/lib/radicale
+      - ./storage/services/radicale:/var/lib/radicale
 
   ldap-server:
     image: bitnamilegacy/openldap:2.6
@@ -274,8 +270,8 @@ services:
       # Use the custom schema from opencloud because we are in full control of the ldap server
       - ./config/ldap/schemas/10_opencloud_schema.ldif:/schemas/10_opencloud_schema.ldif
       - ./config/ldap/docker-entrypoint-override.sh:/opt/bitnami/scripts/openldap/docker-entrypoint-override.sh
-      - ${LDAP_CERTS_DIR_HOST:-ldap-certs}:/opt/bitnami/openldap/share
-      - ${LDAP_DATA_DIR_HOST:-ldap-data}:/bitnami/openldap
+      - ./storage/services/ldap-certs:/opt/bitnami/openldap/share
+      - ./storage/services/ldap:/bitnami/openldap
     restart: always
 
 volumes:
