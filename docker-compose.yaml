@@ -6,7 +6,7 @@ services:
     # release notes: https://docs.opencloud.eu/opencloud_release_notes.html
     user: ${OC_CONTAINER_UID_GID:-1000:1000}
     networks:
-      opencloud-net:
+      coolify:
     entrypoint:
       - /bin/sh
     # run opencloud init to initialize a configuration file with random secrets
@@ -148,7 +148,7 @@ services:
     image: ${OC_DOCKER_IMAGE:-opencloudeu/opencloud-rolling}:${OC_DOCKER_TAG:-latest}
     user: ${OC_CONTAINER_UID_GID:-1000:1000}
     networks:
-      opencloud-net:
+      coolify:
     depends_on:
       opencloud:
         condition: service_started
@@ -162,15 +162,16 @@ services:
       COLLABORATION_HTTP_ADDR: 0.0.0.0:9300
       MICRO_REGISTRY: "nats-js-kv"
       MICRO_REGISTRY_ADDRESS: "opencloud:9233"
-      COLLABORATION_WOPI_SRC: https://${WOPISERVER_DOMAIN:-wopiserver.opencloud.test}
+      # internal service-to-service routing
+      COLLABORATION_WOPI_SRC: http://collaboration:9300
       COLLABORATION_APP_NAME: "CollaboraOnline"
       COLLABORATION_APP_PRODUCT: "Collabora"
-      COLLABORATION_APP_ADDR: https://${COLLABORA_DOMAIN:-collabora.opencloud.test}
-      COLLABORATION_APP_ICON: https://${COLLABORA_DOMAIN:-collabora.opencloud.test}/favicon.ico
+      COLLABORATION_APP_ADDR: http://collabora:9980
+      COLLABORATION_APP_ICON: http://collabora:9980/favicon.ico
       COLLABORATION_APP_INSECURE: "${INSECURE:-true}"
       COLLABORATION_CS3API_DATAGATEWAY_INSECURE: "${INSECURE:-true}"
       COLLABORATION_LOG_LEVEL: ${LOG_LEVEL:-info}
-      OC_URL: https://${OC_DOMAIN:-cloud.opencloud.test}
+      OC_URL: http://opencloud:9200
       # metrics
       COLLABORATION_DEBUG_ADDR: 0.0.0.0:9304
     volumes:
@@ -192,9 +193,10 @@ services:
     image: collabora/code:25.04.7.1.1
     # release notes: https://www.collaboraonline.com/release-notes/
     networks:
-      opencloud-net:
+      coolify:
     environment:
-      aliasgroup1: https://${WOPISERVER_DOMAIN:-wopiserver.opencloud.test}
+      # internal service-to-service routing
+      aliasgroup1: http://collaboration:9300
       DONT_GEN_SSL_CERT: "YES"
       extra_params: |
         --o:ssl.enable=${COLLABORA_SSL_ENABLE:-true} \
@@ -236,7 +238,7 @@ services:
     image: ${TIKA_IMAGE:-apache/tika:latest}
     # release notes: https://tika.apache.org
     networks:
-      opencloud-net:
+      coolify:
     restart: always
     logging:
       driver: ${LOG_DRIVER:-local}
@@ -248,7 +250,7 @@ services:
       # K = KiB (1024), M = MiB (1024 * 1024), G = GiB (1024 * 1024 * 1024)
       CLAMD_CONF_StreamMaxLength: 100M
     networks:
-      opencloud-net:
+      coolify:
     volumes:
       - clamav-socket:/tmp
       - clamav-db:/var/lib/clamav
@@ -260,7 +262,7 @@ services:
     image: ${RADICALE_DOCKER_IMAGE:-opencloudeu/radicale}:${RADICALE_DOCKER_TAG:-latest}
     user: ${OC_CONTAINER_UID_GID:-1000:1000}
     networks:
-      opencloud-net:
+      coolify:
     logging:
       driver: ${LOG_DRIVER:-local}
     restart: always
@@ -271,7 +273,7 @@ services:
   ldap-server:
     image: bitnamilegacy/openldap:2.6
     networks:
-      opencloud-net:
+      coolify:
     entrypoint: [ "/bin/sh", "/opt/bitnami/scripts/openldap/docker-entrypoint-override.sh", "/opt/bitnami/scripts/openldap/run.sh" ]
     environment:
       BITNAMI_DEBUG: true
@@ -302,4 +304,5 @@ volumes:
   ldap-data:
 
 networks:
-  opencloud-net:
+  coolify:
+    external: true

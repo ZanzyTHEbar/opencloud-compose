@@ -20,6 +20,11 @@ If you use different domains, update the label host rules in `docker-compose.yam
 
 Optional metrics are still available on ports `9205` and `9304` if you want to expose them separately.
 
+### Networking
+
+All services are attached to the external `coolify` network. Service-to-service URLs use Docker DNS
+(`opencloud`, `collaboration`, `collabora`, `tika`, `ldap-server`) to avoid public DNS when possible.
+
 ### Required Environment
 
 Set these in Coolify env vars:
