@@ -10,11 +10,13 @@ Do **not** include any `traefik/*` or `external-proxy/*` overlays when using Coo
 
 ### Domains and Ports
 
-Traefik labels are set from env vars:
+Traefik labels are defined in `docker-compose.yaml` for:
 
-- `opencloud` -> `https://${OC_DOMAIN}` (port `9200`)
-- `collaboration` -> `https://${WOPISERVER_DOMAIN}` (port `9300`)
-- `collabora` -> `https://${COLLABORA_DOMAIN}` (port `9980`)
+- `opencloud` -> `https://opencloud.zacariahheim.com` (port `9200`)
+- `collaboration` -> `https://wopi.zacariahheim.com` (port `9300`)
+- `collabora` -> `https://collabora.zacariahheim.com` (port `9980`)
+
+If you use different domains, update the label host rules in `docker-compose.yaml`.
 
 Optional metrics are still available on ports `9205` and `9304` if you want to expose them separately.
 
