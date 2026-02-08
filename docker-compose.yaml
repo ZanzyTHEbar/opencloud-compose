@@ -16,7 +16,7 @@ services:
     environment:
       # enable services that are not started automatically
       OC_ADD_RUN_SERVICES: ${START_ADDITIONAL_SERVICES}
-      OC_URL: https://${OC_DOMAIN:-cloud.opencloud.test}${TRAEFIK_PORT_HTTPS:+:}${TRAEFIK_PORT_HTTPS:-}
+      OC_URL: https://${OC_DOMAIN:-cloud.opencloud.test}
       OC_LOG_LEVEL: ${LOG_LEVEL:-info}
       OC_LOG_COLOR: "${LOG_PRETTY:-false}"
       OC_LOG_PRETTY: "${LOG_PRETTY:-false}"
@@ -58,7 +58,6 @@ services:
 
       # collabora integration
       COLLABORA_DOMAIN: ${COLLABORA_DOMAIN:-collabora.opencloud.test}
-      TRAEFIK_PORT_HTTPS: ${TRAEFIK_PORT_HTTPS:+:}${TRAEFIK_PORT_HTTPS:-}
       NATS_NATS_HOST: 0.0.0.0
       GATEWAY_GRPC_ADDR: 0.0.0.0:9142
       FRONTEND_APP_HANDLER_SECURE_VIEW_APP_ADDR: eu.opencloud.api.collaboration
@@ -160,15 +159,15 @@ services:
       COLLABORATION_HTTP_ADDR: 0.0.0.0:9300
       MICRO_REGISTRY: "nats-js-kv"
       MICRO_REGISTRY_ADDRESS: "opencloud:9233"
-      COLLABORATION_WOPI_SRC: https://${WOPISERVER_DOMAIN:-wopiserver.opencloud.test}${TRAEFIK_PORT_HTTPS:+:}${TRAEFIK_PORT_HTTPS:-}
+      COLLABORATION_WOPI_SRC: https://${WOPISERVER_DOMAIN:-wopiserver.opencloud.test}
       COLLABORATION_APP_NAME: "CollaboraOnline"
       COLLABORATION_APP_PRODUCT: "Collabora"
-      COLLABORATION_APP_ADDR: https://${COLLABORA_DOMAIN:-collabora.opencloud.test}${TRAEFIK_PORT_HTTPS:+:}${TRAEFIK_PORT_HTTPS:-}
-      COLLABORATION_APP_ICON: https://${COLLABORA_DOMAIN:-collabora.opencloud.test}${TRAEFIK_PORT_HTTPS:+:}${TRAEFIK_PORT_HTTPS:-}/favicon.ico
+      COLLABORATION_APP_ADDR: https://${COLLABORA_DOMAIN:-collabora.opencloud.test}
+      COLLABORATION_APP_ICON: https://${COLLABORA_DOMAIN:-collabora.opencloud.test}/favicon.ico
       COLLABORATION_APP_INSECURE: "${INSECURE:-true}"
       COLLABORATION_CS3API_DATAGATEWAY_INSECURE: "${INSECURE:-true}"
       COLLABORATION_LOG_LEVEL: ${LOG_LEVEL:-info}
-      OC_URL: https://${OC_DOMAIN:-cloud.opencloud.test}${TRAEFIK_PORT_HTTPS:+:}${TRAEFIK_PORT_HTTPS:-}
+      OC_URL: https://${OC_DOMAIN:-cloud.opencloud.test}
       # metrics
       COLLABORATION_DEBUG_ADDR: 0.0.0.0:9304
     volumes:
@@ -187,15 +186,15 @@ services:
     networks:
       opencloud-net:
     environment:
-      aliasgroup1: https://${WOPISERVER_DOMAIN:-wopiserver.opencloud.test}${TRAEFIK_PORT_HTTPS:+:}${TRAEFIK_PORT_HTTPS:-}
+      aliasgroup1: https://${WOPISERVER_DOMAIN:-wopiserver.opencloud.test}
       DONT_GEN_SSL_CERT: "YES"
       extra_params: |
         --o:ssl.enable=${COLLABORA_SSL_ENABLE:-true} \
         --o:ssl.ssl_verification=${COLLABORA_SSL_VERIFICATION:-true} \
         --o:ssl.termination=true \
         --o:welcome.enable=false \
-        --o:net.frame_ancestors=${OC_DOMAIN:-cloud.opencloud.test}${TRAEFIK_PORT_HTTPS:+:}${TRAEFIK_PORT_HTTPS:-} \
-        --o:net.lok_allow.host[14]=${OC_DOMAIN:-cloud.opencloud.test}${TRAEFIK_PORT_HTTPS:+:}${TRAEFIK_PORT_HTTPS:-} \
+        --o:net.frame_ancestors=${OC_DOMAIN:-cloud.opencloud.test} \
+        --o:net.lok_allow.host[14]=${OC_DOMAIN:-cloud.opencloud.test} \
         --o:home_mode.enable=${COLLABORA_HOME_MODE:-false}
       username: ${COLLABORA_ADMIN_USER:-admin}
       password: ${COLLABORA_ADMIN_PASSWORD:-admin}
