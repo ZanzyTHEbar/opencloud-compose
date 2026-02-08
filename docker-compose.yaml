@@ -81,16 +81,18 @@ services:
       # metrics
       PROXY_DEBUG_ADDR: 0.0.0.0:9205
 
-      # external IdP (Authentik)
-      OC_LDAP_URI: ldaps://ldap-server:1636
-      OC_LDAP_INSECURE: "true"
-      OC_LDAP_BIND_DN: "cn=admin,dc=opencloud,dc=eu"
-      OC_LDAP_BIND_PASSWORD: ${LDAP_BIND_PASSWORD:-admin}
-      OC_LDAP_GROUP_BASE_DN: "ou=groups,dc=opencloud,dc=eu"
-      OC_LDAP_USER_BASE_DN: "ou=users,dc=opencloud,dc=eu"
-      OC_LDAP_USER_FILTER: "(objectclass=inetOrgPerson)"
+      # external IdP (Authentik) + LDAP outpost
+      OC_LDAP_URI: ${AUTHENTIK_LDAP_URI:-ldap://authentik-ldap:3389}
+      OC_LDAP_INSECURE: "${AUTHENTIK_LDAP_INSECURE:-true}"
+      OC_LDAP_BIND_DN: ${AUTHENTIK_LDAP_BIND_DN:-cn=ldapservice,ou=users,dc=ldap,dc=goauthentik,dc=io}
+      OC_LDAP_BIND_PASSWORD: ${AUTHENTIK_LDAP_BIND_PASSWORD}
+      OC_LDAP_GROUP_BASE_DN: ${AUTHENTIK_LDAP_GROUP_BASE_DN:-ou=groups,dc=ldap,dc=goauthentik,dc=io}
+      OC_LDAP_USER_BASE_DN: ${AUTHENTIK_LDAP_USER_BASE_DN:-ou=users,dc=ldap,dc=goauthentik,dc=io}
+      OC_LDAP_USER_FILTER: ${AUTHENTIK_LDAP_USER_FILTER:-(objectClass=user)}
+      OC_LDAP_USER_SCHEMA_ID: ${AUTHENTIK_LDAP_USER_SCHEMA_ID:-uid}
+      OC_LDAP_GROUP_SCHEMA_ID: ${AUTHENTIK_LDAP_GROUP_SCHEMA_ID:-uid}
       GRAPH_LDAP_SERVER_UUID: "false"
-      GRAPH_LDAP_REFINT_ENABLED: "true" # osixia has refint enabled.
+      GRAPH_LDAP_REFINT_ENABLED: "false"
       FRONTEND_READONLY_USER_ATTRIBUTES: "user.onPremisesSamAccountName,user.displayName,user.mail,user.passwordProfile,user.accountEnabled,user.appRoleAssignments"
       PROXY_OIDC_REWRITE_WELLKNOWN: "true"
       WEB_OIDC_CLIENT_ID: ${OC_OIDC_CLIENT_ID:-web}
@@ -98,9 +100,9 @@ services:
       OC_OIDC_ISSUER: ${IDP_ISSUER_URL:-https://keycloak.opencloud.test/realms/openCloud}
       # This specifies to start all services except idm and idp. These are replaced by external services.
       OC_EXCLUDE_RUN_SERVICES: idm,idp
-      # IdP specific configuration for auto-provisioning
-      OC_LDAP_SERVER_WRITE_ENABLED: "true"
-      PROXY_AUTOPROVISION_ACCOUNTS: "true"
+      # Authentik LDAP outpost is read-only; disable autoprovisioning
+      OC_LDAP_SERVER_WRITE_ENABLED: "false"
+      PROXY_AUTOPROVISION_ACCOUNTS: "false"
       # Use the `sub` claim from the IdP for the user ID
       # Most IdPs use the internal user ID as the `sub` claim
       PROXY_USER_OIDC_CLAIM: "sub"
@@ -166,12 +168,13 @@ services:
       COLLABORATION_WOPI_SRC: http://collaboration:9300
       COLLABORATION_APP_NAME: "CollaboraOnline"
       COLLABORATION_APP_PRODUCT: "Collabora"
-      COLLABORATION_APP_ADDR: http://collabora:9980
-      COLLABORATION_APP_ICON: http://collabora:9980/favicon.ico
+      # public URLs (used by clients)
+      COLLABORATION_APP_ADDR: https://${COLLABORA_DOMAIN:-collabora.opencloud.test}
+      COLLABORATION_APP_ICON: https://${COLLABORA_DOMAIN:-collabora.opencloud.test}/favicon.ico
       COLLABORATION_APP_INSECURE: "${INSECURE:-true}"
       COLLABORATION_CS3API_DATAGATEWAY_INSECURE: "${INSECURE:-true}"
       COLLABORATION_LOG_LEVEL: ${LOG_LEVEL:-info}
-      OC_URL: http://opencloud:9200
+      OC_URL: https://${OC_DOMAIN:-cloud.opencloud.test}
       # metrics
       COLLABORATION_DEBUG_ADDR: 0.0.0.0:9304
     volumes:
@@ -270,28 +273,19 @@ services:
       - ./config/radicale:/etc/radicale
       - ./storage/services/radicale:/var/lib/radicale
 
-  ldap-server:
-    image: bitnamilegacy/openldap:2.6
+  authentik-ldap:
+    image: ghcr.io/goauthentik/ldap
     networks:
       coolify:
-    entrypoint: [ "/bin/sh", "/opt/bitnami/scripts/openldap/docker-entrypoint-override.sh", "/opt/bitnami/scripts/openldap/run.sh" ]
     environment:
-      BITNAMI_DEBUG: true
-      LDAP_TLS_VERIFY_CLIENT: never
-      LDAP_ENABLE_TLS: "yes"
-      LDAP_TLS_CA_FILE: /opt/bitnami/openldap/share/openldap.crt
-      LDAP_TLS_CERT_FILE: /opt/bitnami/openldap/share/openldap.crt
-      LDAP_TLS_KEY_FILE: /opt/bitnami/openldap/share/openldap.key
-      LDAP_ROOT: "dc=opencloud,dc=eu"
-      LDAP_ADMIN_PASSWORD: ${LDAP_BIND_PASSWORD:-admin}
-    volumes:
-      # Only use the base ldif file to create the base structure
-      - ./config/ldap/ldif/10_base.ldif:/ldifs/10_base.ldif
-      # Use the custom schema from opencloud because we are in full control of the ldap server
-      - ./config/ldap/schemas/10_opencloud_schema.ldif:/schemas/10_opencloud_schema.ldif
-      - ./config/ldap/docker-entrypoint-override.sh:/opt/bitnami/scripts/openldap/docker-entrypoint-override.sh
-      - ./storage/services/ldap-certs:/opt/bitnami/openldap/share
-      - ./storage/services/ldap:/bitnami/openldap
+      AUTHENTIK_HOST: ${AUTHENTIK_HOST}
+      AUTHENTIK_INSECURE: "${AUTHENTIK_INSECURE:-false}"
+      AUTHENTIK_TOKEN: ${AUTHENTIK_LDAP_TOKEN}
+    expose:
+      - "3389" # LDAP
+      - "6636" # LDAPS
+    logging:
+      driver: ${LOG_DRIVER:-local}
     restart: always
 
 volumes:
@@ -300,8 +294,6 @@ volumes:
   clamav-db:
   clamav-socket:
   radicale-data:
-  ldap-certs:
-  ldap-data:
 
 networks:
   coolify:
