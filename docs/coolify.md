@@ -1,22 +1,22 @@
 ## Coolify Deployment
 
-This stack is designed to run behind Coolify's built-in Traefik proxy. Coolify will run `docker compose` with a single file and generate Traefik labels for any domains you assign.
+This stack is designed to run behind Coolify's built-in Traefik proxy. The Compose file includes explicit Traefik labels for OpenCloud, Collabora, and WOPI.
 
 ### Compose File
 
-Use `docker-compose.yaml` in this repo. It already includes OpenCloud, Collabora, WOPI, Tika, ClamAV, Radicale, monitoring, external IdP, and the Coolify port exposures in a single file.
+Use `docker-compose.yaml` in this repo. It already includes OpenCloud, Collabora, WOPI, Tika, ClamAV, Radicale, monitoring, external IdP, and Traefik labels in a single file.
 
 Do **not** include any `traefik/*` or `external-proxy/*` overlays when using Coolify.
 
-### Domains and Ports (Coolify)
+### Domains and Ports
 
-Assign domains in Coolify so it can generate Traefik labels automatically.
+Traefik labels are set from env vars:
 
-- `opencloud` service on port `9200` -> `opencloud.zacariahheim.com`
-- `collaboration` service on port `9300` -> `wopi.zacariahheim.com`
-- `collabora` service on port `9980` -> `collabora.zacariahheim.com`
-- Optional metrics: `opencloud` service on port `9205` -> metrics domain (if desired)
-- Optional collaboration metrics: `collaboration` service on port `9304` -> metrics domain (if desired)
+- `opencloud` -> `https://${OC_DOMAIN}` (port `9200`)
+- `collaboration` -> `https://${WOPISERVER_DOMAIN}` (port `9300`)
+- `collabora` -> `https://${COLLABORA_DOMAIN}` (port `9980`)
+
+Optional metrics are still available on ports `9205` and `9304` if you want to expose them separately.
 
 ### Required Environment
 
