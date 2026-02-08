@@ -32,10 +32,12 @@ INSECURE=false
 Storage paths (bind mounts inside the Coolify LXC):
 
 ```
-OC_CONFIG_DIR=/mnt/opencloud/config
-OC_DATA_DIR=/mnt/opencloud/data
-OC_APPS_DIR=/mnt/opencloud/apps
-RADICALE_DATA_DIR=/mnt/opencloud/services/radicale
+OC_CONFIG_DIR_HOST=/mnt/opencloud/config
+OC_DATA_DIR_HOST=/mnt/opencloud/data
+OC_APPS_DIR_HOST=/mnt/opencloud/apps
+RADICALE_DATA_DIR_HOST=/mnt/opencloud/services/radicale
+LDAP_DATA_DIR_HOST=/mnt/opencloud/services/ldap
+LDAP_CERTS_DIR_HOST=/mnt/opencloud/services/ldap-certs
 ```
 
 If antivirus is enabled, add it to `START_ADDITIONAL_SERVICES`:

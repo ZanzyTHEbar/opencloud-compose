@@ -130,9 +130,9 @@ services:
       - ./config/opencloud/banned-password-list.txt:/etc/opencloud/banned-password-list.txt
       - ./config/opencloud/proxy.yaml:/etc/opencloud/proxy.yaml
       # configure the .env file to use own paths instead of docker internal volumes
-      - ${OC_CONFIG_DIR:-opencloud-config}:/etc/opencloud
-      - ${OC_DATA_DIR:-opencloud-data}:/var/lib/opencloud
-      - ${OC_APPS_DIR:-./config/opencloud/apps}:/var/lib/opencloud/web/assets/apps
+      - ${OC_CONFIG_DIR_HOST:-opencloud-config}:/etc/opencloud
+      - ${OC_DATA_DIR_HOST:-opencloud-data}:/var/lib/opencloud
+      - ${OC_APPS_DIR_HOST:-./config/opencloud/apps}:/var/lib/opencloud/web/assets/apps
       - clamav-socket:/var/run/clamav
     expose:
       - "9200"
@@ -172,7 +172,7 @@ services:
       COLLABORATION_DEBUG_ADDR: 0.0.0.0:9304
     volumes:
       # configure the .env file to use own paths instead of docker internal volumes
-      - ${OC_CONFIG_DIR:-opencloud-config}:/etc/opencloud
+      - ${OC_CONFIG_DIR_HOST:-opencloud-config}:/etc/opencloud
     expose:
       - "9300"
       - "9304"
@@ -251,8 +251,8 @@ services:
       driver: ${LOG_DRIVER:-local}
     restart: always
     volumes:
-      - ./config/radicale/config:/etc/radicale/config
-      - ${RADICALE_DATA_DIR:-radicale-data}:/var/lib/radicale
+      - ./config/radicale:/etc/radicale
+      - ${RADICALE_DATA_DIR_HOST:-radicale-data}:/var/lib/radicale
 
   ldap-server:
     image: bitnamilegacy/openldap:2.6
@@ -274,8 +274,8 @@ services:
       # Use the custom schema from opencloud because we are in full control of the ldap server
       - ./config/ldap/schemas/10_opencloud_schema.ldif:/schemas/10_opencloud_schema.ldif
       - ./config/ldap/docker-entrypoint-override.sh:/opt/bitnami/scripts/openldap/docker-entrypoint-override.sh
-      - ${LDAP_CERTS_DIR:-ldap-certs}:/opt/bitnami/openldap/share
-      - ${LDAP_DATA_DIR:-ldap-data}:/bitnami/openldap
+      - ${LDAP_CERTS_DIR_HOST:-ldap-certs}:/opt/bitnami/openldap/share
+      - ${LDAP_DATA_DIR_HOST:-ldap-data}:/bitnami/openldap
     restart: always
 
 volumes:
