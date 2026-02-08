@@ -1,0 +1,32 @@
+---
+services:
+  opencloud:
+    environment:
+      # bind to all interfaces for Coolify's Traefik proxy
+      PROXY_HTTP_ADDR: "0.0.0.0:9200"
+    expose:
+      - "9200"
+      # optional metrics port (enabled via monitoring/monitoring.yml)
+      - "9205"
+    networks:
+      - coolify
+
+  collaboration:
+    expose:
+      - "9300"
+      # optional metrics port (enabled via monitoring/monitoring-collaboration.yml)
+      - "9304"
+    networks:
+      - coolify
+
+  collabora:
+    expose:
+      - "9980"
+    networks:
+      - coolify
+
+networks:
+  opencloud-net:
+    external: false
+  coolify:
+    external: true

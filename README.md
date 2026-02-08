@@ -18,6 +18,10 @@ OpenCloud Compose offers a modular approach to deploying OpenCloud with several 
 - **Radicale** integration for Calendar and Contacts
 - **ClamAV** antivirus scanning with ClamAV
 
+## Coolify Deployment
+
+If you are running this stack on Coolify and want Coolify's Traefik to manage routing and labels, follow the guide in `docs/coolify.md`.
+
 ## Quick Start Guide
 
 ### Prerequisites
