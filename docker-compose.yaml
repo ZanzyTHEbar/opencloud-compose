@@ -105,7 +105,10 @@ services:
       FRONTEND_READONLY_USER_ATTRIBUTES: "user.onPremisesSamAccountName,user.displayName,user.mail,user.passwordProfile,user.accountEnabled,user.appRoleAssignments"
       PROXY_OIDC_REWRITE_WELLKNOWN: "true"
       WEB_OIDC_CLIENT_ID: ${OC_OIDC_CLIENT_ID:-web}
-      PROXY_ROLE_ASSIGNMENT_DRIVER: "oidc"
+      # Use 'default' to assign 'user' role to all. Switch to 'oidc' once
+      # Authentik is configured with a custom scope mapping that emits
+      # opencloudUser / opencloudAdmin / opencloudSpaceAdmin in a 'roles' claim.
+      PROXY_ROLE_ASSIGNMENT_DRIVER: "default"
       OC_OIDC_ISSUER: ${IDP_ISSUER_URL:-https://keycloak.opencloud.test/realms/openCloud}
       # This specifies to start all services except idm and idp. These are replaced by external services.
       OC_EXCLUDE_RUN_SERVICES: idm,idp
