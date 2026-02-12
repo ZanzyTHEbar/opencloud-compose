@@ -25,7 +25,8 @@ services:
       # INSECURE: needed if OpenCloud / reverse proxy is using self generated certificates
       OC_INSECURE: "${INSECURE:-false}"
       # basic auth (not recommended, but needed for eg. WebDav clients that do not support OpenID Connect)
-      PROXY_ENABLE_BASIC_AUTH: "${PROXY_ENABLE_BASIC_AUTH:-false}"
+      # basic auth is required for CalDAV/CardDAV clients (Radicale integration)
+      PROXY_ENABLE_BASIC_AUTH: "${PROXY_ENABLE_BASIC_AUTH:-true}"
       # demo users
       IDM_CREATE_DEMO_USERS: "${DEMO_USERS:-false}"
       # admin password
@@ -141,6 +142,8 @@ services:
     configs:
       - source: opencloud-csp
         target: /opt/opencloud/csp.yaml
+      - source: opencloud-proxy
+        target: /etc/opencloud/proxy.yaml
     volumes:
       # bind mounts under ./storage -> /mnt/opencloud (symlink in Coolify app dir)
       - ./storage/config:/etc/opencloud
@@ -341,6 +344,36 @@ configs:
           - "'unsafe-inline'"
         worker-src:
           - "'self'"
+  opencloud-proxy:
+    content: |
+      # Forward CalDAV/CardDAV and .well-known endpoints to Radicale
+      additional_policies:
+        - name: default
+          routes:
+            - endpoint: /caldav/
+              backend: http://radicale:5232
+              remote_user_header: X-Remote-User
+              skip_x_access_token: true
+              additional_headers:
+                - X-Script-Name: /caldav
+            - endpoint: /.well-known/caldav
+              backend: http://radicale:5232
+              remote_user_header: X-Remote-User
+              skip_x_access_token: true
+              additional_headers:
+                - X-Script-Name: /caldav
+            - endpoint: /carddav/
+              backend: http://radicale:5232
+              remote_user_header: X-Remote-User
+              skip_x_access_token: true
+              additional_headers:
+                - X-Script-Name: /carddav
+            - endpoint: /.well-known/carddav
+              backend: http://radicale:5232
+              remote_user_header: X-Remote-User
+              skip_x_access_token: true
+              additional_headers:
+                - X-Script-Name: /carddav
   radicale-config:
     content: |
       [server]
