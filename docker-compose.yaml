@@ -25,8 +25,8 @@ services:
       # INSECURE: needed if OpenCloud / reverse proxy is using self generated certificates
       OC_INSECURE: "${INSECURE:-false}"
       # basic auth (not recommended, but needed for eg. WebDav clients that do not support OpenID Connect)
-      # basic auth is required for CalDAV/CardDAV clients (Radicale integration)
-      PROXY_ENABLE_BASIC_AUTH: "${PROXY_ENABLE_BASIC_AUTH:-true}"
+      # basic auth (not recommended, CalDAV/CardDAV clients should use App Tokens instead)
+      PROXY_ENABLE_BASIC_AUTH: "${PROXY_ENABLE_BASIC_AUTH:-false}"
       # demo users
       IDM_CREATE_DEMO_USERS: "${DEMO_USERS:-false}"
       # admin password
