@@ -41,11 +41,10 @@ services:
       NOTIFICATIONS_SMTP_ENCRYPTION: "${SMTP_TRANSPORT_ENCRYPTION:-none}"
       FRONTEND_ARCHIVER_MAX_SIZE: "10000000000"
       FRONTEND_CHECK_FOR_UPDATES: "${CHECK_FOR_UPDATES:-true}"
-      # CSP is built automatically from IDP_DOMAIN, COLLABORA_DOMAIN, COMPANION_DOMAIN env vars.
-      # Do NOT mount a csp.yaml file from the repo -- Coolify resolves volume paths on the host
-      # where repo files do not exist. If you need a custom CSP, place csp.yaml in storage/config/
-      # and uncomment the line below:
-      # PROXY_CSP_CONFIG_FILE_LOCATION: /etc/opencloud/csp.yaml
+      # Explicit CSP config -- mounted via Docker Compose configs at /opt/opencloud/csp.yaml
+      # (outside the /etc/opencloud bind mount). Env-var auto-generation doesn't work reliably
+      # when opencloud.yaml is persisted across restarts.
+      PROXY_CSP_CONFIG_FILE_LOCATION: /opt/opencloud/csp.yaml
       # enable to allow using the banned passwords list
       OC_PASSWORD_POLICY_BANNED_PASSWORDS_LIST: banned-password-list.txt
       # control the password enforcement and policy for public shares
@@ -131,11 +130,12 @@ services:
 
       # bind to all interfaces for Coolify's Traefik proxy
       PROXY_HTTP_ADDR: "0.0.0.0:9200"
+    configs:
+      - source: opencloud-csp
+        target: /opt/opencloud/csp.yaml
     volumes:
       # bind mounts under ./storage -> /mnt/opencloud (symlink in Coolify app dir)
       - ./storage/config:/etc/opencloud
-      # NOTE: Do NOT mount ./config/opencloud/csp.yaml here -- Coolify resolves paths on the
-      # host where repo files are absent. Instead, OpenCloud builds CSP from env vars.
       - ./storage/data:/var/lib/opencloud
       - ./storage/apps:/var/lib/opencloud/web/assets/apps
       - clamav-socket:/var/run/clamav
@@ -284,6 +284,54 @@ services:
     restart: always
 
 configs:
+  opencloud-csp:
+    content: |
+      directives:
+        child-src:
+          - "'self'"
+          - "blob:"
+        connect-src:
+          - "'self'"
+          - "blob:"
+          - "https://${IDP_DOMAIN:-auth.zacariahheim.com}"
+          - "https://${COLLABORA_DOMAIN:-collabora.zacariahheim.com}"
+          - "wss://${COLLABORA_DOMAIN:-collabora.zacariahheim.com}"
+          - "https://${COMPANION_DOMAIN:-opencloud.zacariahheim.com}"
+          - "wss://${COMPANION_DOMAIN:-opencloud.zacariahheim.com}"
+          - "https://raw.githubusercontent.com/opencloud-eu/awesome-apps/"
+          - "https://update.opencloud.eu/"
+        default-src:
+          - "'none'"
+        font-src:
+          - "'self'"
+        frame-ancestors:
+          - "'self'"
+          - "https://${OC_DOMAIN:-opencloud.zacariahheim.com}"
+          - "https://${COLLABORA_DOMAIN:-collabora.zacariahheim.com}"
+        frame-src:
+          - "'self'"
+          - "blob:"
+          - "https://${COLLABORA_DOMAIN:-collabora.zacariahheim.com}"
+        img-src:
+          - "'self'"
+          - "blob:"
+          - "data:"
+          - "https://raw.githubusercontent.com/opencloud-eu/awesome-apps/"
+        manifest-src:
+          - "'self'"
+        media-src:
+          - "'self'"
+        object-src:
+          - "'self'"
+          - "blob:"
+        script-src:
+          - "'self'"
+          - "'unsafe-inline'"
+        style-src:
+          - "'self'"
+          - "'unsafe-inline'"
+        worker-src:
+          - "'self'"
   radicale-config:
     content: |
       [server]
