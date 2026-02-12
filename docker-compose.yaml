@@ -125,9 +125,9 @@ services:
       # Disable user mechanism via LDAP attribute
       OC_LDAP_DISABLE_USER_MECHANISM: "attribute"
       OC_ADMIN_USER_ID: ""
-      # These must be 'true' when using PROXY_ROLE_ASSIGNMENT_DRIVER=default
-      # (only set to 'false' when using the 'oidc' role driver)
-      SETTINGS_SETUP_DEFAULT_ASSIGNMENTS: "true"
+      # SETTINGS_SETUP_DEFAULT_ASSIGNMENTS requires OC_ADMIN_USER_ID; keep false with external IdP
+      SETTINGS_SETUP_DEFAULT_ASSIGNMENTS: "false"
+      # Assign "user" role to every authenticated user who doesn't already have one
       GRAPH_ASSIGN_DEFAULT_USER_ROLE: "true"
       GRAPH_USERNAME_MATCH: "none"
       # We need to set the IDP_DOMAIN to allow the CSP rules to be set correctly
