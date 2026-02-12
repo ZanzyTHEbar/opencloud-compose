@@ -1,29 +1,34 @@
 ## Coolify Deployment
 
-This stack is designed to run behind Coolify's built-in Traefik proxy. The Compose file includes explicit Traefik labels for OpenCloud, Collabora, and WOPI.
+This stack is designed to run behind Coolify's built-in Traefik proxy. Coolify auto-generates Traefik labels from domain assignments in its UI -- the compose file does **not** contain any Traefik labels.
 
 ### Compose File
 
-Use `docker-compose.yaml` in this repo. It already includes OpenCloud, Collabora, WOPI, Tika, ClamAV, Radicale, monitoring, external IdP, and Traefik labels in a single file.
+Use `docker-compose.yaml` in this repo. It includes OpenCloud, Collabora, WOPI, Tika, ClamAV, Radicale, and external IdP (Authentik LDAP outpost) in a single file.
 
 Do **not** include any `traefik/*` or `external-proxy/*` overlays when using Coolify.
 
 ### Domains and Ports
 
-Traefik labels are defined in `docker-compose.yaml` for:
+In Coolify's standard (non-raw) deployment mode, you assign domains **per service** in the UI. Coolify generates all Traefik routing labels automatically. The port suffix tells Coolify which container port to route traffic to -- it is **not** exposed publicly.
 
-- `opencloud` -> `https://opencloud.example.com` (port `9200`)
-- `collaboration` -> `https://wopi.example.com` (port `9300`)
-- `collabora` -> `https://collabora.example.com` (port `9980`)
+Assign these domains in the Coolify UI for the opencloud app:
 
-If you use different domains (e.g. `zacariahheim.com`), set `COLLABORA_DOMAIN`, `WOPISERVER_DOMAIN` and the Traefik Host labels in `docker-compose.yaml` to match. In Coolify you must assign each domain to the **correct service/port**: OpenCloud → 9200, WOPI (collaboration) → 9300, **Collabora CODE → 9980**. If the Collabora domain is routed to the wrong container, the collaboration service will get 404 on `/hosting/discovery`.
+| Service         | Domain in Coolify UI                        | Container port |
+| --------------- | ------------------------------------------- | -------------- |
+| opencloud       | `https://opencloud.example.com:9200`        | 9200           |
+| collaboration   | `https://wopi.example.com:9300`             | 9300           |
+| collabora       | `https://collabora.example.com:9980`        | 9980           |
 
-Optional metrics are still available on ports `9205` and `9304` if you want to expose them separately.
+Replace `example.com` with your real domain (e.g. `zacariahheim.com`).
+
+Services that do **not** need a public domain (tika, clamav, radicale, authentik-ldap) should be left without a domain in the UI. They stay private on the internal Docker network.
+
+Optional metrics ports (`9205` for opencloud, `9304` for collaboration) are exposed internally but not routed by Traefik.
 
 ### Networking
 
-All services are attached to the external `coolify` network. Service-to-service URLs use Docker DNS
-(`opencloud`, `collaboration`, `collabora`, `tika`, `ldap-server`) to avoid public DNS when possible.
+All services are attached to the external `coolify` network. Service-to-service URLs use Docker DNS (`opencloud`, `collaboration`, `collabora`, `tika`, `authentik-ldap`) to avoid public DNS when possible.
 
 ### Required Environment
 
@@ -40,7 +45,7 @@ Use your real domain (e.g. `opencloud.zacariahheim.com`), not the default `cloud
 
 For a **single-domain** setup (one host for OpenCloud only), set `COMPANION_DOMAIN` to the same value as `OC_DOMAIN` so CSP allows theme/config requests.
 
-Storage paths (bind mounts inside the Coolify LXC):
+### Storage
 
 This Compose file mounts from `./storage/...`, so create a symlink inside the Coolify app directory:
 
@@ -125,19 +130,16 @@ Coolify doesn't use `COMPOSE_FILE` or `COMPOSE_PATH_SEPARATOR`, so you can omit 
 
 If the Web UI shows "Missing or invalid config" and the browser console reports CSP blocking `https://cloud.opencloud.test/themes/opencloud/theme.json`:
 
-1. **Set OC_DOMAIN in Coolify** to the domain you use to access OpenCloud (e.g. `opencloud.zacariahheim.com`), with no `https://` or port. The proxy uses it to build `OC_URL` and to fill the CSP template; if it's missing, the app keeps using `cloud.opencloud.test`.
-2. **Redeploy** after changing env so the opencloud container gets the new `OC_DOMAIN` and the repo’s `csp.yaml` (mounted from `./config/opencloud/csp.yaml`) is applied with the correct `connect-src` for your domain.
-3. If the problem persists, ensure no persisted config overrides the URL: in the app’s `storage/config` on the server, check for `config.json` or `proxy.yaml` (or other oCIS config) that might hardcode `cloud.opencloud.test`. oCIS normally prefers environment variables over config files; removing or fixing such a file and restarting can help.
+1. **Set OC_DOMAIN in Coolify** to the domain you use to access OpenCloud (e.g. `opencloud.zacariahheim.com`), with no `https://` or port. The proxy uses it to build `OC_URL` and to fill CSP rules; if it's missing, the app keeps using `cloud.opencloud.test`.
+2. **Redeploy** after changing env so the opencloud container picks up the new `OC_DOMAIN`.
+3. If the problem persists, ensure no persisted config overrides the URL: in the app's `storage/config` on the server, check for `proxy.yaml` or other oCIS config that might hardcode `cloud.opencloud.test`. oCIS normally prefers environment variables over config files; removing or fixing such a file and restarting can help.
 
 ### Collabora: "WopiDiscovery: wopi app url failed" / 404 on /hosting/discovery
 
 The **collaboration** (WOPI) service calls `https://${COLLABORA_DOMAIN}/hosting/discovery` to find Collabora CODE. If that URL returns 404:
 
-1. **Route the Collabora domain to the right container**  
-   `COLLABORA_DOMAIN` (e.g. `collabora.zacariahheim.com`) must be routed by Coolify's Traefik to the **collabora** service (port **9980**), not to the **collaboration** service (port 9300). In Coolify, assign the Collabora domain to the container that exposes 9980.
+1. **Assign the Collabora domain to the correct service in Coolify**
+   In the Coolify UI, set the `collabora` service's domain to `https://collabora.example.com:9980`. The `:9980` tells Coolify to route traffic to the Collabora CODE container (port 9980), not to the collaboration/WOPI container (port 9300). If the domain is assigned to the wrong service, discovery returns 404.
 
-2. **Check Traefik labels**  
-   In `docker-compose.yaml`, the `collabora` service has `traefik.http.routers.collabora.rule=Host(\`collabora.example.com\`)`. If Coolify overrides or ignores this, ensure your Collabora domain is configured in Coolify to point at the collabora container (9980).
-
-3. **Verify discovery locally**  
-   From the server: `curl -k https://collabora.zacariahheim.com/hosting/discovery` should return XML. If it 404s, the domain is hitting the wrong backend.
+2. **Verify discovery locally**
+   From the server: `curl -k https://collabora.example.com/hosting/discovery` should return XML. If it 404s, the domain is hitting the wrong backend -- check the Coolify domain assignment for the collabora service.
