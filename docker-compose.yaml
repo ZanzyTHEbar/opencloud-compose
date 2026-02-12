@@ -118,8 +118,8 @@ services:
       GRAPH_USERNAME_MATCH: "none"
       # We need to set the IDP_DOMAIN to allow the CSP rules to be set correctly
       IDP_DOMAIN: ${IDP_DOMAIN:-keycloak.opencloud.test}
-      # Companion + OC domain for CSP (theme.json, config.json, same-origin). Set OC_DOMAIN in Coolify to your real domain.
-      COMPANION_DOMAIN: ${COMPANION_DOMAIN:-${OC_DOMAIN:-companion.opencloud.test}}
+      # Companion domain for CSP. For single-domain setup set COMPANION_DOMAIN=your-oc-domain in Coolify.
+      COMPANION_DOMAIN: ${COMPANION_DOMAIN:-companion.opencloud.test}
       # Optional: set to :443 or leave unset for default HTTPS port in CSP URLs
       TRAEFIK_PORT_HTTPS: ${TRAEFIK_PORT_HTTPS:-}
       # The openCloud users need to be able to edit their account in the externa IdP
