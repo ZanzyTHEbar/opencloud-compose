@@ -12,9 +12,9 @@ Do **not** include any `traefik/*` or `external-proxy/*` overlays when using Coo
 
 Traefik labels are defined in `docker-compose.yaml` for:
 
-- `opencloud` -> `https://opencloud.zacariahheim.com` (port `9200`)
-- `collaboration` -> `https://wopi.zacariahheim.com` (port `9300`)
-- `collabora` -> `https://collabora.zacariahheim.com` (port `9980`)
+- `opencloud` -> `https://opencloud.example.com` (port `9200`)
+- `collaboration` -> `https://wopi.example.com` (port `9300`)
+- `collabora` -> `https://collabora.example.com` (port `9980`)
 
 If you use different domains, update the label host rules in `docker-compose.yaml`.
 
@@ -27,14 +27,16 @@ All services are attached to the external `coolify` network. Service-to-service 
 
 ### Required Environment
 
-Set these in Coolify env vars:
+Set these in Coolify env vars. **OC_DOMAIN is required** so the backend serves the correct server URL (config.json / theme.json) and CSP allows your origin:
 
 ```
-OC_DOMAIN=opencloud.zacariahheim.com
-COLLABORA_DOMAIN=collabora.zacariahheim.com
-WOPISERVER_DOMAIN=wopi.zacariahheim.com
+OC_DOMAIN=opencloud.example.com
+COLLABORA_DOMAIN=collabora.example.com
+WOPISERVER_DOMAIN=wopi.example.com
 INSECURE=false
 ```
+
+Use your real domain (e.g. `opencloud.zacariahheim.com`), not the default `cloud.opencloud.test`. If OC_DOMAIN is missing or wrong you get "Missing or invalid config" and CSP blocking theme.json.
 
 Storage paths (bind mounts inside the Coolify LXC):
 
@@ -64,9 +66,9 @@ START_ADDITIONAL_SERVICES=antivirus
 Set these variables to your Authentik values:
 
 ```
-IDP_DOMAIN=auth.zacariahheim.com
-IDP_ISSUER_URL=https://auth.zacariahheim.com/application/o/opencloud/
-IDP_ACCOUNT_URL=https://auth.zacariahheim.com/user/
+IDP_DOMAIN=auth.example.com
+IDP_ISSUER_URL=https://auth.example.com/application/o/opencloud/
+IDP_ACCOUNT_URL=https://auth.example.com/user/
 OC_OIDC_CLIENT_ID=<from Authentik>
 ```
 
@@ -94,7 +96,7 @@ Set these Coolify env vars:
 
 ```
 # Outpost container -> Authentik
-AUTHENTIK_HOST=https://auth.zacariahheim.com
+AUTHENTIK_HOST=https://auth.example.com
 AUTHENTIK_INSECURE=false
 AUTHENTIK_LDAP_TOKEN=<outpost-token>
 
@@ -116,3 +118,11 @@ If you enable LDAPS, switch `AUTHENTIK_LDAP_URI` to `ldaps://authentik-ldap:6636
 ### Optional Compose Env Vars (Not Used by Coolify)
 
 Coolify doesn't use `COMPOSE_FILE` or `COMPOSE_PATH_SEPARATOR`, so you can omit those for deployments in Coolify.
+
+### Troubleshooting: "Missing or invalid config" and CSP blocking theme.json
+
+If the Web UI shows "Missing or invalid config" and the browser console reports CSP blocking `https://cloud.opencloud.test/themes/opencloud/theme.json`:
+
+1. **Set OC_DOMAIN in Coolify** to the domain you use to access OpenCloud (e.g. `opencloud.zacariahheim.com`), with no `https://` or port. The proxy uses it to build `OC_URL` and to fill the CSP template; if it's missing, the app keeps using `cloud.opencloud.test`.
+2. **Redeploy** after changing env so the opencloud container gets the new `OC_DOMAIN` and the repo’s `csp.yaml` (mounted from `./config/opencloud/csp.yaml`) is applied with the correct `connect-src` for your domain.
+3. If the problem persists, ensure no persisted config overrides the URL: in the app’s `storage/config` on the server, check for `config.json` or `proxy.yaml` (or other oCIS config) that might hardcode `cloud.opencloud.test`. oCIS normally prefers environment variables over config files; removing or fixing such a file and restarting can help.

@@ -4,6 +4,9 @@ directives:
   connect-src:
     - '''self'''
     - 'blob:'
+    # OC origin (required for theme.json, config.json and same-origin API)
+    - 'https://${OC_DOMAIN|cloud.opencloud.test}${TRAEFIK_PORT_HTTPS}/'
+    - 'wss://${OC_DOMAIN|cloud.opencloud.test}${TRAEFIK_PORT_HTTPS}/'
     - 'https://${COMPANION_DOMAIN|companion.opencloud.test}${TRAEFIK_PORT_HTTPS}/'
     - 'wss://${COMPANION_DOMAIN|companion.opencloud.test}${TRAEFIK_PORT_HTTPS}/'
     - 'https://raw.githubusercontent.com/opencloud-eu/awesome-apps/'
