@@ -82,6 +82,9 @@ services:
       ANTIVIRUS_CLAMAV_SOCKET: /var/run/clamav/clamd.sock
       ANTIVIRUS_SCANNER_TYPE: clamav
 
+      # collaborative mode: detect external filesystem changes (NFS/bind-mount shared data)
+      STORAGE_USERS_POSIX_WATCH_FS: "${STORAGE_USERS_POSIX_WATCH_FS:-true}"
+
       # metrics
       PROXY_DEBUG_ADDR: 0.0.0.0:9205
 
@@ -153,6 +156,9 @@ services:
       - ./storage/config:/etc/opencloud
       - ./storage/data:/var/lib/opencloud
       - ./storage/apps:/var/lib/opencloud/web/assets/apps
+      # ZFS shared datasets (bind-mounted into LXC 102 via Proxmox mp4/mp5)
+      - /mnt/shared/data:/mnt/shared/data
+      - /mnt/shared/common:/mnt/shared/common
       - clamav-socket:/var/run/clamav
     expose:
       - "9200"
