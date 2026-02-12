@@ -125,8 +125,10 @@ services:
       # Disable user mechanism via LDAP attribute
       OC_LDAP_DISABLE_USER_MECHANISM: "attribute"
       OC_ADMIN_USER_ID: ""
-      SETTINGS_SETUP_DEFAULT_ASSIGNMENTS: "false"
-      GRAPH_ASSIGN_DEFAULT_USER_ROLE: "false"
+      # These must be 'true' when using PROXY_ROLE_ASSIGNMENT_DRIVER=default
+      # (only set to 'false' when using the 'oidc' role driver)
+      SETTINGS_SETUP_DEFAULT_ASSIGNMENTS: "true"
+      GRAPH_ASSIGN_DEFAULT_USER_ROLE: "true"
       GRAPH_USERNAME_MATCH: "none"
       # We need to set the IDP_DOMAIN to allow the CSP rules to be set correctly
       IDP_DOMAIN: ${IDP_DOMAIN:-keycloak.opencloud.test}
