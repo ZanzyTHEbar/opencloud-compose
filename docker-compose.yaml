@@ -353,6 +353,9 @@ configs:
         connect-src:
           - "'self'"
           - "blob:"
+          # OC origin (required for theme.json, config.json and same-origin API)
+          - "https://${OC_DOMAIN:-cloud.opencloud.test}"
+          - "wss://${OC_DOMAIN:-cloud.opencloud.test}"
           - "https://${IDP_DOMAIN:-keycloak.opencloud.test}"
           - "https://${COLLABORA_DOMAIN:-collabora.opencloud.test}"
           - "wss://${COLLABORA_DOMAIN:-collabora.opencloud.test}"
