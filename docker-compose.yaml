@@ -124,9 +124,11 @@ services:
       PROXY_USER_CS3_CLAIM: "username"
       # Disable user mechanism via LDAP attribute
       OC_LDAP_DISABLE_USER_MECHANISM: "attribute"
-      OC_ADMIN_USER_ID: ""
-      # SETTINGS_SETUP_DEFAULT_ASSIGNMENTS requires OC_ADMIN_USER_ID; keep false with external IdP
-      SETTINGS_SETUP_DEFAULT_ASSIGNMENTS: "false"
+      # OC_ADMIN_USER_ID must match the LDAP 'uid' attribute of the admin user.
+      # Set OC_ADMIN_USER_ID in Coolify env vars (it's instance-specific).
+      OC_ADMIN_USER_ID: ${OC_ADMIN_USER_ID}
+      # Requires OC_ADMIN_USER_ID to be set; creates default admin + user role assignments
+      SETTINGS_SETUP_DEFAULT_ASSIGNMENTS: "true"
       # Assign "user" role to every authenticated user who doesn't already have one
       GRAPH_ASSIGN_DEFAULT_USER_ROLE: "true"
       GRAPH_USERNAME_MATCH: "none"
