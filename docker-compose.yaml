@@ -92,8 +92,9 @@ services:
       OC_LDAP_GROUP_BASE_DN: ${AUTHENTIK_LDAP_GROUP_BASE_DN:-ou=groups,dc=ldap,dc=goauthentik,dc=io}
       OC_LDAP_USER_BASE_DN: ${AUTHENTIK_LDAP_USER_BASE_DN:-ou=users,dc=ldap,dc=goauthentik,dc=io}
       OC_LDAP_USER_FILTER: ${AUTHENTIK_LDAP_USER_FILTER:-(objectClass=user)}
-      OC_LDAP_USER_SCHEMA_ID: ${AUTHENTIK_LDAP_USER_SCHEMA_ID:-uid}
-      OC_LDAP_GROUP_SCHEMA_ID: ${AUTHENTIK_LDAP_GROUP_SCHEMA_ID:-uid}
+      # Authentik LDAP: 'cn' = username for both users and groups
+      OC_LDAP_USER_SCHEMA_ID: ${AUTHENTIK_LDAP_USER_SCHEMA_ID:-cn}
+      OC_LDAP_GROUP_SCHEMA_ID: ${AUTHENTIK_LDAP_GROUP_SCHEMA_ID:-cn}
       GRAPH_LDAP_SERVER_UUID: "false"
       GRAPH_LDAP_REFINT_ENABLED: "false"
       FRONTEND_READONLY_USER_ATTRIBUTES: "user.onPremisesSamAccountName,user.displayName,user.mail,user.passwordProfile,user.accountEnabled,user.appRoleAssignments"
@@ -106,12 +107,11 @@ services:
       # Authentik LDAP outpost is read-only; disable autoprovisioning
       OC_LDAP_SERVER_WRITE_ENABLED: "false"
       PROXY_AUTOPROVISION_ACCOUNTS: "false"
-      # Use the `sub` claim from the IdP for the user ID
-      # Most IdPs use the internal user ID as the `sub` claim
-      PROXY_USER_OIDC_CLAIM: "sub"
-      # Use the `sub` claim as identifier during autoprovisioning
-      # That mitigates problems when a user is renamed in the IdP
-      PROXY_AUTOPROVISION_CLAIM_USERNAME: "sub"
+      # Authentik LDAP exposes 'cn' = username; OIDC 'preferred_username' = username.
+      # The default 'sub' claim (UUID) does NOT match Authentik LDAP's 'uid' (hash),
+      # so we use 'preferred_username' for both OIDC and LDAP user resolution.
+      PROXY_USER_OIDC_CLAIM: "preferred_username"
+      PROXY_AUTOPROVISION_CLAIM_USERNAME: "preferred_username"
       PROXY_USER_CS3_CLAIM: "username"
       # Disable user mechanism via LDAP attribute
       OC_LDAP_DISABLE_USER_MECHANISM: "attribute"
@@ -269,7 +269,8 @@ services:
       - ./storage/services/radicale:/var/lib/radicale
 
   authentik-ldap:
-    image: ghcr.io/goauthentik/ldap
+    # Pin to match the Authentik server version to avoid outpost/server incompatibilities
+    image: ghcr.io/goauthentik/ldap:2025.6.4
     networks:
       coolify:
     environment:
