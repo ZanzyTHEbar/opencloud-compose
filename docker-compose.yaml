@@ -17,7 +17,7 @@ services:
       # enable services that are not started automatically
       OC_ADD_RUN_SERVICES: ${START_ADDITIONAL_SERVICES}
       OC_URL: https://${OC_DOMAIN:-cloud.opencloud.test}
-      OC_LOG_LEVEL: ${LOG_LEVEL:-debug}
+      OC_LOG_LEVEL: ${LOG_LEVEL:-info}
       OC_LOG_COLOR: "${LOG_PRETTY:-false}"
       OC_LOG_PRETTY: "${LOG_PRETTY:-false}"
       # do not use SSL between the reverse proxy and OpenCloud
@@ -168,6 +168,11 @@ services:
       # Defaults to local ./storage/shared/* dirs (created empty if absent).
       - ${SHARED_DATA_PATH:-./storage/shared/data}:/mnt/shared/data
       - ${SHARED_COMMON_PATH:-./storage/shared/common}:/mnt/shared/common
+      # DragonNet project space: bind-mount the shared data directory directly into
+      # the posixfs project-spaces tree. Uses a bind mount (not a symlink) because
+      # Go's filepath.Walk (used by posixfs WarmupIDCache) does not follow symlinks.
+      # Set DRAGONNET_SPACE_ID in your env to the UUID of the DragonNet project space.
+      - ${SHARED_DATA_PATH:-./storage/shared/data}:/var/lib/opencloud/storage/users/projects/${DRAGONNET_SPACE_ID}
       - clamav-socket:/var/run/clamav
     expose:
       - "9200"
