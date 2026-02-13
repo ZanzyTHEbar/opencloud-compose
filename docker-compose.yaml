@@ -82,7 +82,10 @@ services:
       ANTIVIRUS_CLAMAV_SOCKET: /var/run/clamav/clamd.sock
       ANTIVIRUS_SCANNER_TYPE: clamav
 
-      # collaborative mode: detect external filesystem changes (NFS/bind-mount shared data)
+      # posixfs storage driver: stores files with real names (not UUID blobs),
+      # enables collaborative mode for external filesystem integration (NFS, ZFS bind mounts).
+      STORAGE_USERS_DRIVER: "${STORAGE_USERS_DRIVER:-posix}"
+      # detect external filesystem changes in real time (inotify/fanotify)
       STORAGE_USERS_POSIX_WATCH_FS: "${STORAGE_USERS_POSIX_WATCH_FS:-true}"
 
       # metrics
