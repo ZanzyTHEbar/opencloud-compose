@@ -87,6 +87,8 @@ services:
       STORAGE_USERS_DRIVER: "${STORAGE_USERS_DRIVER:-posix}"
       # required for posixfs: use nats-js-kv for ID-to-path cache
       STORAGE_USERS_ID_CACHE_STORE: "${STORAGE_USERS_ID_CACHE_STORE:-nats-js-kv}"
+      # scan filesystem tree on startup to assimilate new/modified files
+      STORAGE_USERS_POSIX_SCAN_FS: "${STORAGE_USERS_POSIX_SCAN_FS:-true}"
       # detect external filesystem changes in real time (inotify/fanotify)
       STORAGE_USERS_POSIX_WATCH_FS: "${STORAGE_USERS_POSIX_WATCH_FS:-true}"
 
