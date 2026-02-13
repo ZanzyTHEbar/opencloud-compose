@@ -85,6 +85,8 @@ services:
       # posixfs storage driver: stores files with real names (not UUID blobs),
       # enables collaborative mode for external filesystem integration (NFS, ZFS bind mounts).
       STORAGE_USERS_DRIVER: "${STORAGE_USERS_DRIVER:-posix}"
+      # required for posixfs: use nats-js-kv for ID-to-path cache
+      STORAGE_USERS_ID_CACHE_STORE: "${STORAGE_USERS_ID_CACHE_STORE:-nats-js-kv}"
       # detect external filesystem changes in real time (inotify/fanotify)
       STORAGE_USERS_POSIX_WATCH_FS: "${STORAGE_USERS_POSIX_WATCH_FS:-true}"
 
