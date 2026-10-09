@@ -330,7 +330,7 @@ services:
 
   authentik-ldap:
     # Pin to match the Authentik server version to avoid outpost/server incompatibilities
-    image: ghcr.io/goauthentik/ldap:2026.5.7
+    image: ghcr.io/goauthentik/ldap:2026.8.3
     networks:
       coolify:
     environment:
