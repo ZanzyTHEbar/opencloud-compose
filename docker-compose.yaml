@@ -116,6 +116,7 @@ services:
       FRONTEND_READONLY_USER_ATTRIBUTES: "user.onPremisesSamAccountName,user.displayName,user.mail,user.passwordProfile,user.accountEnabled,user.appRoleAssignments"
       PROXY_OIDC_REWRITE_WELLKNOWN: "true"
       WEB_OIDC_CLIENT_ID: ${OC_OIDC_CLIENT_ID:-web}
+      WEB_OIDC_SCOPE: "openid profile email offline_access"
       # Authentik 'OpenCloud Roles' scope mapping emits 'roles' claim
       # based on group membership (opencloud-admins, opencloud-spaceadmins, etc.)
       PROXY_ROLE_ASSIGNMENT_DRIVER: "oidc"
